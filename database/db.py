@@ -39,6 +39,13 @@ class Database:
                     full_name TEXT NOT NULL,
                     phone TEXT NOT NULL,
                     slot_id INTEGER NOT NULL,
+                    service_category TEXT NOT NULL DEFAULT '',
+                    service_name TEXT NOT NULL DEFAULT '',
+                    service_price INTEGER NOT NULL DEFAULT 0,
+                    nail_length TEXT NOT NULL DEFAULT '',
+                    nail_shape TEXT NOT NULL DEFAULT '',
+                    coating_type TEXT NOT NULL DEFAULT '',
+                    client_comment TEXT NOT NULL DEFAULT '',
                     status TEXT NOT NULL DEFAULT 'active',
                     created_at TEXT NOT NULL,
                     reminder_at TEXT,
@@ -53,7 +60,29 @@ class Database:
                 ON bookings(slot_id) WHERE status = 'active';
                 """
             )
+            self._ensure_booking_columns()
             self._conn.commit()
+
+    def _ensure_booking_columns(self) -> None:
+        """Apply lightweight schema migrations for existing DB files."""
+        existing_cols = {
+            row["name"]
+            for row in self._conn.execute("PRAGMA table_info(bookings)").fetchall()
+        }
+        required_columns = {
+            "service_category": "TEXT NOT NULL DEFAULT ''",
+            "service_name": "TEXT NOT NULL DEFAULT ''",
+            "service_price": "INTEGER NOT NULL DEFAULT 0",
+            "nail_length": "TEXT NOT NULL DEFAULT ''",
+            "nail_shape": "TEXT NOT NULL DEFAULT ''",
+            "coating_type": "TEXT NOT NULL DEFAULT ''",
+            "client_comment": "TEXT NOT NULL DEFAULT ''",
+        }
+        for col_name, col_def in required_columns.items():
+            if col_name not in existing_cols:
+                self._conn.execute(
+                    f"ALTER TABLE bookings ADD COLUMN {col_name} {col_def}"
+                )
 
     def _rows_to_dict(self, rows: list[sqlite3.Row]) -> list[dict]:
         return [dict(r) for r in rows]
@@ -247,6 +276,8 @@ class Database:
             cur = self._conn.execute(
                 """
                 SELECT b.id, b.user_id, b.full_name, b.phone, b.slot_id, b.reminder_at,
+                       b.service_category, b.service_name, b.service_price,
+                       b.nail_length, b.nail_shape, b.coating_type, b.client_comment,
                        ts.work_date, ts.slot_time
                 FROM bookings b
                 JOIN time_slots ts ON ts.id = b.slot_id
@@ -265,6 +296,13 @@ class Database:
         slot_id: int,
         created_at: str,
         reminder_at: str | None,
+        service_category: str,
+        service_name: str,
+        service_price: int,
+        nail_length: str,
+        nail_shape: str,
+        coating_type: str,
+        client_comment: str,
     ) -> dict | None:
         with self._lock:
             cur = self._conn.cursor()
@@ -304,10 +342,29 @@ class Database:
                 )
                 cur.execute(
                     """
-                    INSERT INTO bookings(user_id, full_name, phone, slot_id, status, created_at, reminder_at)
-                    VALUES(?, ?, ?, ?, 'active', ?, ?)
+                    INSERT INTO bookings(
+                        user_id, full_name, phone, slot_id,
+                        service_category, service_name, service_price,
+                        nail_length, nail_shape, coating_type, client_comment,
+                        status, created_at, reminder_at
+                    )
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
                     """,
-                    (user_id, full_name, phone, slot_id, created_at, reminder_at),
+                    (
+                        user_id,
+                        full_name,
+                        phone,
+                        slot_id,
+                        service_category,
+                        service_name,
+                        service_price,
+                        nail_length,
+                        nail_shape,
+                        coating_type,
+                        client_comment,
+                        created_at,
+                        reminder_at,
+                    ),
                 )
                 booking_id = cur.lastrowid
                 self._conn.commit()
@@ -372,7 +429,10 @@ class Database:
         with self._lock:
             cur = self._conn.execute(
                 """
-                SELECT b.id, b.user_id, b.full_name, b.phone, b.slot_id, b.status, b.created_at, b.reminder_at,
+                SELECT b.id, b.user_id, b.full_name, b.phone, b.slot_id,
+                       b.service_category, b.service_name, b.service_price,
+                       b.nail_length, b.nail_shape, b.coating_type, b.client_comment,
+                       b.status, b.created_at, b.reminder_at,
                        ts.work_date, ts.slot_time
                 FROM bookings b
                 JOIN time_slots ts ON ts.id = b.slot_id
@@ -387,7 +447,7 @@ class Database:
         with self._lock:
             cur = self._conn.execute(
                 """
-                SELECT b.id, b.user_id, b.full_name, b.phone, ts.slot_time
+                SELECT b.id, b.user_id, b.full_name, b.phone, b.service_name, ts.slot_time
                 FROM bookings b
                 JOIN time_slots ts ON ts.id = b.slot_id
                 WHERE ts.work_date = ? AND b.status = 'active'

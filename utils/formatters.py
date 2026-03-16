@@ -4,11 +4,23 @@
     phone: str,
     work_date: str,
     slot_time: str,
+    service_name: str,
+    service_price: int,
+    nail_length: str,
+    nail_shape: str,
+    coating_type: str,
+    comment: str,
 ) -> str:
+    comment_html = comment if comment else "—"
     return (
         "<b>Новая запись</b>\n"
         f"Дата: <b>{work_date}</b>\n"
         f"Время: <b>{slot_time}</b>\n"
+        f"Услуга: <b>{service_name}</b> ({service_price}₽)\n"
+        f"Длина: <b>{nail_length}</b>\n"
+        f"Форма: <b>{nail_shape}</b>\n"
+        f"Покрытие: <b>{coating_type}</b>\n"
+        f"Комментарий: <b>{comment_html}</b>\n"
         f"Имя: <b>{full_name}</b>\n"
         f"Телефон: <b>{phone}</b>\n"
         f"User ID: <code>{user_id}</code>"

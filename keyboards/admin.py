@@ -27,7 +27,8 @@ def get_admin_slots_keyboard(action: str, slots: list[dict]) -> InlineKeyboardMa
 def get_admin_bookings_keyboard(bookings: list[dict]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for booking in bookings:
-        text = f"{booking['slot_time']} • {booking['full_name']}"
+        service = booking.get("service_name") or "услуга"
+        text = f"{booking['slot_time']} • {booking['full_name']} • {service}"
         kb.button(text=text[:40], callback_data=f"admin:cancel_booking:book:{booking['id']}")
     kb.button(text="Назад", callback_data="menu:admin")
     kb.adjust(1)

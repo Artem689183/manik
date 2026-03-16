@@ -5,6 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from config import Settings
 from keyboards.main_menu import get_main_menu
+from utils.pricing import get_price_list_html
 
 
 def get_common_router(settings: Settings) -> Router:
@@ -20,11 +21,7 @@ def get_common_router(settings: Settings) -> Router:
 
     @router.callback_query(F.data == "menu:prices")
     async def show_prices(callback: CallbackQuery) -> None:
-        await callback.message.answer(
-            "<b>Прайс</b>\n"
-            "Френч — <b>1000₽</b>\n"
-            "Квадрат — <b>500₽</b>"
-        )
+        await callback.message.answer(get_price_list_html())
         await callback.answer()
 
     @router.callback_query(F.data == "menu:portfolio")
