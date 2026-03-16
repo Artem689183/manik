@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram bot manik_bot
+After=network.target
+
+[Service]
+Type=simple
+User=manikbot
+WorkingDirectory=/opt/manik_bot
+EnvironmentFile=/opt/manik_bot/.env
+ExecStart=/opt/manik_bot/.venv/bin/python /opt/manik_bot/bot.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
