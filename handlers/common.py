@@ -1,5 +1,6 @@
 ﻿from aiogram import F, Router
 from aiogram.filters import CommandStart
+from aiogram.filters.state import StateFilter
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -18,6 +19,13 @@ def get_common_router(settings: Settings) -> Router:
             "<b>Добро пожаловать!</b>\nВыберите действие:",
             reply_markup=get_main_menu(is_admin),
         )
+
+    @router.message(StateFilter(None))
+    async def hint_start(message: Message) -> None:
+        text = (message.text or "").strip()
+        if text.startswith("/"):
+            return
+        await message.answer("Чтобы начать работу с ботом, нажмите /start")
 
     @router.callback_query(F.data == "menu:prices")
     async def show_prices(callback: CallbackQuery) -> None:
